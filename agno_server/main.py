@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 from typing import Any, Dict, Optional, List
 from supabase import create_client, Client
+from fastapi.staticfiles import StaticFiles
 from agno_server.orchestrator import AgnoOrchestrator
 from agno_server.orchestrator_agno import AgnoOrchestratorAgno
 
@@ -22,6 +23,9 @@ if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
 app = FastAPI()
+
+# Serve static files (frontend)
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 class ReadRowsRequest(BaseModel):
     table: str
@@ -172,8 +176,11 @@ def refine_prompt(request: RefinePromptRequest):
     Returns:
         RefinePromptResponse: The final, production-ready prompt.
     """
-    prompt = orchestrator.refine_prompt(request.user_idea)
-    return RefinePromptResponse(prompt=prompt)
+    try:
+        prompt = orchestrator.refine_prompt(request.user_idea)
+        return RefinePromptResponse(prompt=prompt)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Prompt refinement failed: {str(e)}")
 
 # --- AGNO MULTI-AGENT ENDPOINT ---
 @app.post("/refine_prompt_agno", response_model=RefinePromptResponse)

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agno Multi-Agent Orchestrator</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #191724; color: #e0def4; }
+        header { background: #1f1d2e; padding: 2rem; text-align: center; }
+        main { padding: 2rem; max-width: 600px; margin: 2rem auto; background: #26233a; border-radius: 10px; box-shadow: 0 2px 10px #0002; }
+        h1 { margin: 0 0 1rem 0; }
+        label, input, textarea { display: block; width: 100%; }
+        input, textarea { margin-bottom: 1rem; padding: 0.5rem; border-radius: 4px; border: none; background: #1f1d2e; color: #e0def4; }
+        button { background: #31748f; color: #fff; border: none; padding: 0.75rem 1.5rem; border-radius: 5px; font-size: 1rem; cursor: pointer; }
+        button:hover { background: #9ccfd8; color: #191724; }
+        #result { margin-top: 2rem; padding: 1rem; background: #1f1d2e; border-radius: 6px; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Agno Multi-Agent Prompt Refiner</h1>
+        <p>Enter your rough prompt idea and let the agents craft a production-ready version!</p>
+    </header>
+    <main>
+        <form id="promptForm">
+            <label for="userIdea">Your Idea:</label>
+            <textarea id="userIdea" name="userIdea" rows="4" required></textarea>
+            <button type="submit">Refine Prompt</button>
+        </form>
+        <div id="result" style="display:none;"></div>
+    </main>
+    <script>
+        const form = document.getElementById('promptForm');
+        const resultDiv = document.getElementById('result');
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            resultDiv.style.display = 'none';
+            resultDiv.textContent = 'Refining...';
+            resultDiv.style.display = 'block';
+            const userIdea = document.getElementById('userIdea').value;
+            try {
+                const resp = await fetch('/refine_prompt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_idea: userIdea })
+                });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    resultDiv.textContent = data.prompt;
+                } else {
+                    const err = await resp.json();
+                    resultDiv.textContent = 'Error: ' + (err.detail || 'Unknown error.');
+                }
+            } catch (err) {
+                resultDiv.textContent = 'Network error: ' + err;
+            }
+        };
+    </script>
+</body>
+</html>
