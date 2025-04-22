@@ -1,8 +1,8 @@
-from agno.tools.base import Tool
+from .base import SupabaseTool
 import httpx
 import os
 
-class BraveSearchTool(Tool):
+class BraveSearchTool(SupabaseTool):
     name = "BraveSearch"
     description = "Searches the web using Brave Search API. Returns a summary of top results."
 
@@ -25,3 +25,14 @@ class BraveSearchTool(Tool):
             snippet = item.get("description")
             results.append(f"- {title}: {url}\n  {snippet}")
         return "\n".join(results) if results else "No results found."
+
+    def execute(self, params: dict) -> str:
+        """
+        Executes the BraveSearchTool using the query in params.
+        Args:
+            params (dict): Should contain the key 'query'.
+        Returns:
+            str: Search results summary.
+        """
+        query = params.get("query", "")
+        return self.run(query)

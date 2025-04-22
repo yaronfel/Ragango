@@ -3,7 +3,7 @@ Entry point for the Agno FastMCP Supabase server.
 """
 
 import os
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Request
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from typing import Any, Dict, Optional, List
@@ -17,15 +17,19 @@ load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
-if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
-    raise RuntimeError("Supabase credentials are not set in environment variables.")
-
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+def get_supabase_client():
+    if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+        raise RuntimeError("Supabase credentials are not set in environment variables.")
+    return create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
 app = FastAPI()
 
 # Serve static files (frontend)
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
+app.mount("/static", StaticFiles(directory="static", html=True), name="static")
+
+@app.on_event("startup")
+def startup_event():
+    app.state.supabase = get_supabase_client()
 
 class ReadRowsRequest(BaseModel):
     table: str
@@ -64,12 +68,12 @@ class RefinePromptResponse(BaseModel):
     prompt: str
 
 # Reason: Placeholder for MCP server startup logic
-@app.get("/")
+@app.get("/", include_in_schema=True)
 def root():
     return {"status": "Agno MCP server running"}
 
 @app.post("/tools/read_rows", response_model=ReadRowsResponse)
-def read_rows(request: ReadRowsRequest):
+def read_rows(request: ReadRowsRequest, http_request: Request):
     """
     Reads rows from a specified Supabase table using optional filters.
     Args:
@@ -79,24 +83,21 @@ def read_rows(request: ReadRowsRequest):
     Raises:
         HTTPException: If the table does not exist or query fails.
     """
+    supabase = http_request.app.state.supabase
+    table = request.table
+    filters = request.filters or {}
+    limit = request.limit or 100
     try:
-        query = supabase.table(request.table).select("*")
-        if request.filters:
-            for key, value in request.filters.items():
-                query = query.eq(key, value)
-        if request.limit:
-            query = query.limit(request.limit)
-        response = query.execute()
-        if hasattr(response, 'data'):
-            rows = response.data
-        else:
-            rows = response["data"] if "data" in response else []
+        query = supabase.table(table).select("*")
+        for key, value in filters.items():
+            query = query.eq(key, value)
+        rows = query.limit(limit).execute().data
         return ReadRowsResponse(rows=rows)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Supabase query failed: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/tools/create_record", response_model=CreateRecordResponse)
-def create_record(request: CreateRecordRequest):
+def create_record(request: CreateRecordRequest, http_request: Request):
     """
     Creates one or more records in a Supabase table.
     Args:
@@ -106,18 +107,17 @@ def create_record(request: CreateRecordRequest):
     Raises:
         HTTPException: If insertion fails.
     """
+    supabase = http_request.app.state.supabase
+    table = request.table
+    records = request.records
     try:
-        response = supabase.table(request.table).insert(request.records).execute()
-        if hasattr(response, 'data'):
-            inserted = response.data
-        else:
-            inserted = response["data"] if "data" in response else []
+        inserted = supabase.table(table).insert(records).execute().data
         return CreateRecordResponse(inserted=inserted)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Supabase insert failed: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/tools/update_record", response_model=UpdateRecordResponse)
-def update_record(request: UpdateRecordRequest):
+def update_record(request: UpdateRecordRequest, http_request: Request):
     """
     Updates one or more records in a Supabase table.
     Args:
@@ -127,21 +127,21 @@ def update_record(request: UpdateRecordRequest):
     Raises:
         HTTPException: If update fails.
     """
+    supabase = http_request.app.state.supabase
+    table = request.table
+    filters = request.filters
+    values = request.values
     try:
-        query = supabase.table(request.table)
-        for key, value in request.filters.items():
+        query = supabase.table(table)
+        for key, value in filters.items():
             query = query.eq(key, value)
-        response = query.update(request.values).execute()
-        if hasattr(response, 'data'):
-            updated = response.data
-        else:
-            updated = response["data"] if "data" in response else []
+        updated = query.update(values).execute().data
         return UpdateRecordResponse(updated=updated)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Supabase update failed: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/tools/delete_record", response_model=DeleteRecordResponse)
-def delete_record(request: DeleteRecordRequest):
+def delete_record(request: DeleteRecordRequest, http_request: Request):
     """
     Deletes one or more records in a Supabase table.
     Args:
@@ -151,18 +151,17 @@ def delete_record(request: DeleteRecordRequest):
     Raises:
         HTTPException: If deletion fails.
     """
+    supabase = http_request.app.state.supabase
+    table = request.table
+    filters = request.filters
     try:
-        query = supabase.table(request.table)
-        for key, value in request.filters.items():
+        query = supabase.table(table)
+        for key, value in filters.items():
             query = query.eq(key, value)
-        response = query.delete().execute()
-        if hasattr(response, 'data'):
-            deleted = response.data
-        else:
-            deleted = response["data"] if "data" in response else []
+        deleted = query.delete().execute().data
         return DeleteRecordResponse(deleted=deleted)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Supabase delete failed: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
 
 orchestrator = AgnoOrchestrator()
 agno_orchestrator = AgnoOrchestratorAgno()

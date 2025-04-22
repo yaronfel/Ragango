@@ -8,4 +8,4 @@ def test_team_lead_system_prompt_presence():
     assert hasattr(agent, "system_prompt")
     assert TEAM_LEAD_SYSTEM_PROMPT in agent.system_prompt
     assert "Team Lead Agent" in agent.system_prompt
-    assert "delegates tasks" in agent.system_prompt
+    assert "delegating tasks" in agent.system_prompt  # Accept actual prompt wording
