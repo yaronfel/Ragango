@@ -146,3 +146,4 @@ Please follow PEP8, use type hints, and format code with Black. Add docstrings (
 
 ---
 For more details, see `PLANNING.md` and `TASK.md`.
+# Ragango
