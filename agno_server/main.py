@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from typing import Any, Dict, Optional, List
 from supabase import create_client, Client
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from agno_server.orchestrator import AgnoOrchestrator
 from agno_server.orchestrator_agno import AgnoOrchestratorAgno
 
@@ -23,6 +24,18 @@ def get_supabase_client():
     return create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
 app = FastAPI()
+
+# Enable CORS for Cloudflare Pages and local dev
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://ragango.titigimad1.workers.dev",
+        "http://localhost:8788"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Serve static files (frontend)
 app.mount("/static", StaticFiles(directory="static", html=True), name="static")

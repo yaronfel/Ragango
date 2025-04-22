@@ -138,6 +138,17 @@ Examples (Optional):
 - Todoist, Google Tasks
 ```
 
+## Deployment: Backend on Render, Frontend on Cloudflare Pages
+
+- **Frontend:**
+  - Deploy the contents of `static/` to Cloudflare Pages.
+  - In `static/index.html`, set the `BACKEND_URL` variable to your Render backend URL (e.g., `https://your-backend.onrender.com`).
+- **Backend:**
+  - Deploy your FastAPI server to Render.
+  - Ensure CORS is enabled for your Cloudflare Pages domain (see `agno_server/main.py`).
+
+**Note:** Replace placeholders in code with your actual URLs/domains.
+
 ## Testing
 Tests are located in the `/tests` directory and follow Pytest conventions. Each feature includes tests for expected, edge, and failure cases.
 
