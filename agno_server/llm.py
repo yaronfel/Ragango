@@ -21,9 +21,10 @@ class GeminiLLM:
         Returns:
             str: The model's reply.
         """
-        messages = []
+        # Gemini expects a string, not a list of dicts. Prepend system prompt if provided.
         if system:
-            messages.append({"role": "system", "content": system})
-        messages.append({"role": "user", "content": prompt})
-        response = self.model.generate_content(messages)
+            full_prompt = f"{system}\n\n{prompt}"
+        else:
+            full_prompt = prompt
+        response = self.model.generate_content(full_prompt)
         return response.text if hasattr(response, "text") else response['text']
