@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: agno-fastapi-backend
+    env: python
+    plan: free
+    buildCommand: ""
+    startCommand: uvicorn agno_server.main:app --host 0.0.0.0 --port 10000
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: 10000
+      # Add more environment variables here if needed
