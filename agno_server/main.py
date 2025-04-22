@@ -192,7 +192,10 @@ def refine_prompt(request: RefinePromptRequest):
         prompt = orchestrator.refine_prompt(request.user_idea)
         return RefinePromptResponse(prompt=prompt)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Prompt refinement failed: {str(e)}")
+        import traceback
+        tb = traceback.format_exc()
+        print(f"Prompt refinement failed: {e}\n{tb}")
+        raise HTTPException(status_code=500, detail=f"Prompt refinement failed: {str(e)}\n{tb}")
 
 # --- AGNO MULTI-AGENT ENDPOINT ---
 @app.post("/refine_prompt_agno", response_model=RefinePromptResponse)
