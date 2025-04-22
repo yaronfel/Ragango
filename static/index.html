@@ -3,56 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agno Multi-Agent Orchestrator</title>
+    <title>Agno FastAPI Demo</title>
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #191724; color: #e0def4; }
-        header { background: #1f1d2e; padding: 2rem; text-align: center; }
-        main { padding: 2rem; max-width: 600px; margin: 2rem auto; background: #26233a; border-radius: 10px; box-shadow: 0 2px 10px #0002; }
-        h1 { margin: 0 0 1rem 0; }
-        label, input, textarea { display: block; width: 100%; }
-        input, textarea { margin-bottom: 1rem; padding: 0.5rem; border-radius: 4px; border: none; background: #1f1d2e; color: #e0def4; }
-        button { background: #31748f; color: #fff; border: none; padding: 0.75rem 1.5rem; border-radius: 5px; font-size: 1rem; cursor: pointer; }
-        button:hover { background: #9ccfd8; color: #191724; }
-        #result { margin-top: 2rem; padding: 1rem; background: #1f1d2e; border-radius: 6px; }
+        body { font-family: Arial, sans-serif; background: #f9f9f9; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 60px auto; background: #fff; padding: 32px; border-radius: 10px; box-shadow: 0 2px 16px #0001; }
+        h1 { color: #3a3a3a; }
+        label { font-weight: bold; }
+        input, textarea { width: 100%; margin: 8px 0 16px; padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
+        button { background: #0072ff; color: #fff; border: none; padding: 10px 18px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #005fcc; }
+        .result { margin-top: 24px; background: #f5f7fa; padding: 16px; border-radius: 6px; }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Agno Multi-Agent Prompt Refiner</h1>
-        <p>Enter your rough prompt idea and let the agents craft a production-ready version!</p>
-    </header>
-    <main>
+    <div class="container">
+        <h1>Agno API Demo</h1>
         <form id="promptForm">
-            <label for="userIdea">Your Idea:</label>
-            <textarea id="userIdea" name="userIdea" rows="4" required></textarea>
-            <button type="submit">Refine Prompt</button>
+            <label for="user_idea">Refine Prompt</label>
+            <textarea id="user_idea" name="user_idea" rows="3" placeholder="Describe your idea..."></textarea>
+            <button type="submit">Refine</button>
         </form>
-        <div id="result" style="display:none;"></div>
-    </main>
+        <div class="result" id="result"></div>
+    </div>
     <script>
-        const form = document.getElementById('promptForm');
-        const resultDiv = document.getElementById('result');
-        form.onsubmit = async (e) => {
+        document.getElementById('promptForm').onsubmit = async function(e) {
             e.preventDefault();
-            resultDiv.style.display = 'none';
-            resultDiv.textContent = 'Refining...';
-            resultDiv.style.display = 'block';
-            const userIdea = document.getElementById('userIdea').value;
+            const user_idea = document.getElementById('user_idea').value;
+            document.getElementById('result').innerText = 'Loading...';
             try {
-                const resp = await fetch('/refine_prompt', {
+                const resp = await fetch('/tools/refine_prompt', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_idea: userIdea })
+                    body: JSON.stringify({ user_idea })
                 });
+                const data = await resp.json();
                 if (resp.ok) {
-                    const data = await resp.json();
-                    resultDiv.textContent = data.prompt;
+                    document.getElementById('result').innerText = data.prompt || JSON.stringify(data);
                 } else {
-                    const err = await resp.json();
-                    resultDiv.textContent = 'Error: ' + (err.detail || 'Unknown error.');
+                    document.getElementById('result').innerText = data.detail || 'Error: ' + resp.status;
                 }
             } catch (err) {
-                resultDiv.textContent = 'Network error: ' + err;
+                document.getElementById('result').innerText = 'Request failed: ' + err;
             }
         };
     </script>
