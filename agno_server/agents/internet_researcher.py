@@ -43,7 +43,8 @@ class InternetResearcherAgent(Agent):
         Returns:
             Any: Structured summary/information.
         """
-        prompt = f"Summarize and organize the following web search results for project requirements:\n{context['search_results']}"
+        # Use the user idea as the research query input, not context['search_results']
+        prompt = f"Summarize and organize the following web search results for project requirements:\n{context['user_idea']}"
         system = self.system_prompt
         response = self.llm.chat(prompt, system=system)
         return response
